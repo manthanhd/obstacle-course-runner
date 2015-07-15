@@ -1,6 +1,6 @@
 #!/usr/bin/node
 
-var sight = 1;
+var sight = 2;
 var maxSteps = 10;
 
 run(sight, maxSteps);
@@ -14,6 +14,9 @@ function run (sight, maxSteps) {
     var mysense = sense(sight);
     var travelHistory = [];
     mysense.obstructions.push({x: 0, y: 5});    // Setting obstacle
+    mysense.obstructions.push({x: 1, y: 5});    // Setting obstacle
+    mysense.obstructions.push({x: 2, y: 5});    // Setting obstacle
+    mysense.obstructions.push({x: -1, y: 5});    // Setting obstacle
 
     var obstructed = undefined;
     while(steps < maxSteps && !obstructed) {
@@ -58,29 +61,47 @@ function sense (radius) {
     sense.obstructions = [];
     sense.recentObstructions = [];  // TODO: Cache recently encountered obstructions here.
     sense.findObstruction = function (currentX, currentY) {
+        // TODO: Start from 0 and pulsate outward, sweeping for obstruction in every pixel until the size of radius.
         var x = currentX;
         var y = currentY;
+        var affectingObstructions = [];
 
         for(var i = 0; i < sense.obstructions.length; i++) {
+            // TODO: Rather than going through every obstruction in the world, check based on current angle and current target pixel for greater efficiency.
             var obstruction = sense.obstructions[i];
-            for(var a = 0; a < 360; a++) {
+            var targetLocation = {x: x, y: y};
+
+            for(var a = 0; a < 360; a++) {  // Sweeping for obstructions in 360 angle.
                 var targetX = x + (sense.radius * Math.cos(a));
-                targetX = Math.ceil(targetX);
+                targetX = Math.floor(targetX);
                 var targetY = y + (sense.radius * Math.sin(a));
-                targetY = Math.ceil(targetY);
+                targetY = Math.floor(targetY);
+
+                // var cTargetLocation = {x: targetX, y: targetY};
+                // if(cTargetLocation.x != targetLocation.x || cTargetLocation.y != targetLocation.y) {
+                //     console.log(cTargetLocation);
+                // }
+                // targetLocation = cTargetLocation;
+
                 // if(a < 10) {
                 //     console.log("angle: " + a + " targets: ");
                 //     console.log({x: targetX, y: targetY});
                 // }
 
-                if((obstruction.x == targetX && obstruction.y == targetY) || (obstruction.x == x && obstruction.y == y)) {
-                    return { obstruction: obstruction, angle: a };
+                if((obstruction.x == targetX && obstruction.y == targetY)) {
+                    if(affectingObstructions.length > 0) {
+                        var lastAddedObstruction = affectingObstructions[affectingObstructions.length - 1].obstruction;
+                        if(lastAddedObstruction.x != obstruction.x || lastAddedObstruction.y != obstruction.y) {
+                            affectingObstructions.push({ obstruction: obstruction, angle: a });
+                        }
+                    } else {
+                        affectingObstructions.push({ obstruction: obstruction, angle: a });
+                    }
                 }
-                // TODO: Add direction parameter to the obstruction. If you're going +y and if obstruction is in +x then don't worry about it unless there's an obstruction right ahead.
             }
         }
 
-        return false;
+        return (affectingObstructions.length == 0) ? false : affectingObstructions;
     }
 
     return sense;
