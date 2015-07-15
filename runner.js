@@ -6,30 +6,46 @@ var maxSteps = 10;
 run(sight, maxSteps);
 
 function run (sight, maxSteps) {
-    var startX = 0;
-    var startY = 0;
-    var x = startX;
-    var y = startY;
-    var steps = 0;
-    var mysense = sense(sight);
-    mysense.obstructions.push({x: 0, y: 5});
+    var location = {x: 0, y: 0}
 
-    while(steps < maxSteps) {
-        var obstructed = undefined;
-        while(steps < maxSteps && !obstructed) {
-            declarePosition(x, y);
-            var obstructionFound = mysense.findObstruction(x, y);
-            if(obstructionFound == false) {
-                console.log("Whoohoo! No obstruction found. Moving on!");
-                y++;
-            } else {
-                console.log("Obstruction found. Stopping now.");
-                console.log(obstructionFound);
-                return;
-            }
-            steps++;
+    var steps = 0;
+    var angle = 90;  // Starts by going upwards.
+
+    var mysense = sense(sight);
+    var travelHistory = [];
+    mysense.obstructions.push({x: 0, y: 5});    // Setting obstacle
+
+    var obstructed = undefined;
+    while(steps < maxSteps && !obstructed) {
+        declarePosition(location.x, location.y);
+        var obstructionFound = mysense.findObstruction(location.x, location.y);
+        if(obstructionFound == false) {
+            console.log("Whoohoo! No obstruction found. Moving on!");
+            travelHistory.push(location);
+            location = move(angle, location.x, location.y); // Prefer positive vertical movement
+        } else {
+            console.log("Obstruction found. Stopping now.");
+            console.log(obstructionFound);
+            obstructed = obstructionFound;
+            break;
         }
+        steps++;
     }
+
+    console.log("Travelled " + travelHistory.length + " steps.");
+}
+
+function move (angle, currentX, currentY) {
+    var x = currentX;
+    var y = currentY;
+    var a = angle;
+
+    var targetX = x + (1 * Math.cos(a));
+    targetX = Math.ceil(targetX);
+    var targetY = y + (1 * Math.sin(a));
+    targetY = Math.ceil(targetY);
+
+    return {x: targetX, y: targetY};
 }
 
 function declarePosition (x, y) {
